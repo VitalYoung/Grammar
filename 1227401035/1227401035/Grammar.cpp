@@ -21,8 +21,8 @@ Grammar::Grammar(Grammar &g)
 	this->Nonterminate = g.Nonterminate;
 	this->Terminate = g.Terminate;
 	this->head = new Generate;
-	Generate *pH = head;
-	Generate *p = this->head;
+	Generate *pH = this->head;
+	Generate *p = g.head;
 	p = p->next;
 	while(p != NULL)
 	{
@@ -69,24 +69,81 @@ void Grammar::deleteUselessGenerate()
 {
 	Grammar::algorithm21();
 	Grammar::algorithm22();
+    Grammar::removeSameGenerate();
 }
 void Grammar::removeSingleGenerate()
 {
 	this->algorithm26();
+    Grammar::removeSameGenerate();
 }
 void Grammar::removeEGenerate()
 {
 	this->algorithm24And25();
+    Grammar::removeSameGenerate();
+}
+void Grammar::removeSameGenerate()
+{
+    Generate *pGenerate = new Generate;
+    Generate *p = head;
+    Generate *q;
+    Generate *pG = pGenerate;
+    Generate *qG;
+    int flag = 1;
+    p = p->next;
+    while(p != NULL)
+    {
+        flag = 1;
+        qG = pGenerate;
+        qG = qG->next;
+        while (qG != NULL) {
+            if (p->left == qG->left && p->right == qG->right) {
+                flag = 0;
+                break;
+            }
+            qG = qG->next;
+        }
+        if (flag == 1) {
+            Generate *pNextG = new Generate;
+            pNextG->left = p->left;
+            pNextG->right = p->right;
+            pNextG->next = NULL;
+            pG->next = pNextG;
+            pG = pNextG;
+        }
+        q = p;
+        p = p->next;
+        delete q;
+    }
+    this->head = pGenerate;
 }
 void Grammar::Output()
 {
-	Generate *p = head;
-	p = p->next;
-	while(p != NULL)
+	int flag = 1;
+	for(int i=0;i<this->Nonterminate.length();i++)
 	{
-		cout<<p->left<<"->"<<p->right<<endl;
+		flag = 1;
+		Generate *p = head;
 		p = p->next;
+		cout<<this->Nonterminate[i]<<"->";
+		while(p != NULL)
+		{
+			if(p->left == this->Nonterminate[i])
+			{
+				if(flag == 1)
+				{
+					flag = 0;
+					cout<<p->right;
+				}else
+				{
+					cout<<"|"<<p->right;
+				}
+				
+			}
+			p = p->next;
+		}
+		cout<<endl;
 	}
+	
 }
 /*private methods*/
 //算法2.1  算法2.2 删除无用产生式
@@ -105,6 +162,7 @@ void Grammar::algorithm21()
 		p = p->next;
 		while(p != NULL)
 		{
+			
 			flag = 1;
 			for(int i=0;i<p->right.length();i++)
 			{
@@ -125,6 +183,7 @@ void Grammar::algorithm21()
 					Vnt = Vnt + p->left;
 				}
 			}
+			
 			p = p->next;
 		}
 	}
@@ -157,6 +216,7 @@ void Grammar::algorithm21()
 		}
 		p = p->next;
 	}
+	Grammar::SetNonterminate(Vn);
 	Grammar::SetGenerate(pHead);
 }
 void Grammar::algorithm22()
@@ -177,6 +237,30 @@ void Grammar::algorithm22()
 			flag = 1;
 			if(Vn.find(p->left) != -1)
 			{
+				/*
+				for(int i=0;i<p->right.length();i++)
+				{
+					if(this->Nonterminate.find(p->right[i]) != (-1))
+					{
+						if(Vn.find(p->right[i]) == (-1))
+						{
+							isContinue = true;
+							Vn = Vn + p->right[i];
+						}
+					}else
+					{
+						if(this->Terminate.find(p->right[i]) != (-1))
+						{
+							if(Vt.find(p->right[i]) == (-1))
+							{
+								//Vt增大
+								isContinue = true;
+								Vt = Vt + p->right[i];
+							}
+						}
+					}
+				}*/
+				/**/
 				for(int i=0;i<p->right.length();i++)
 				{
 					if(this->Nonterminate.find(p->right[i]) == (-1))
@@ -185,6 +269,7 @@ void Grammar::algorithm22()
 						break;
 					}
 				}
+				
 				if(flag == 1)
 				{
 					//Vn增大
@@ -197,7 +282,9 @@ void Grammar::algorithm22()
 						}
 					}
 				}
+				/**/
 			}
+			/**/
 			flag = 1;
 			if(Vn.find(p->left) != -1)
 			{
@@ -222,7 +309,7 @@ void Grammar::algorithm22()
 						}
 					}
 				}
-			}
+			}/**/
 			p = p->next;
 		}
 	}
@@ -272,7 +359,7 @@ string Grammar::algorithm23()
 	p = p->next;
 	while(p != NULL)
 	{
-		if(p->right.length() == 0)//ε-产生式
+		if(p->right == "&")//ε-产生式
 		{
 			if(W.find(p->left) == -1)
 			{
@@ -331,8 +418,12 @@ Generate* addGenerate(Generate *pG,Generate *pNode,string w)
 	Generate *p = pG;
 	string right = "";
 	string W_="",NonW_="";
+    if(pNode->right == "&")
+        return NULL;
 	for(int i=0;i<pNode->right.length();i++)
 	{
+		if(pNode->right[i] == '&')
+			break;
 		if(w.find(pNode->right[i]) != -1)
 		{
 			W_ = W_ + pNode->right[i];
@@ -362,7 +453,7 @@ Generate* addGenerate(Generate *pG,Generate *pNode,string w)
 				break;
 			}
 		}
-		if(right.length()>0)
+		if(right != "&")
 		{
 			Generate *pNextG = new Generate;
 			pNextG->left = pNode->left;
@@ -394,14 +485,14 @@ void Grammar::algorithm24And25()
 	Generate *pH = pGenerate;
 	while(p != NULL)
 	{
-		pH = addGenerate(pH,p,W);
+        pH = (addGenerate(pH,p,W)==NULL)?pH:addGenerate(pH,p,W);
 		p = p->next;
 	}
 	if(this->isRunAlgorithm25())
 	{
 		Generate *pNextG = new Generate;
 		pNextG->left = this->start;
-		pNextG->right = "";
+		pNextG->right = "&";
 		pNextG->next = NULL;
 		pH->next = pNextG;
 		pH = pNextG;
@@ -416,37 +507,53 @@ void Grammar::algorithm26()
 	Generate *pH = pGenerate;
 	string Wi = "";
 	int flag = 1;
+	bool isContinue = true;//判定Wi 是否增加了
 	for(int i=0;i<this->Nonterminate.length();i++)
 	{
 		char left = this->Nonterminate[i];
 		Wi = left;
-		p = this->head;
-		p = p->next;
-		//构造Wi
-		while(p != NULL)
+		isContinue = true;
+		while(isContinue)
 		{
-			if(left == p->left)
-			{
-				flag = 1;
-				for(int j=0;j<p->right.length();j++)
-				{
-					if(this->Nonterminate.find(p->right[j]) == -1)
-					{
-						flag = 0;
-						break;
-					}
-				}
-				if(flag == 1)
-				{
-					for(int k=0;k<p->right.length();k++)
-					{
-						if(Wi.find(p->right[k]) == -1)
-							Wi = Wi + p->right[k];
-					}
-					
-				}
-			}
+			isContinue = false;
+			p = this->head;
 			p = p->next;
+			//构造Wi
+			while(p != NULL)
+			{
+				if(Wi.find(p->left) != -1)
+				{
+					/*
+					flag = 1;
+					for(int j=0;j<p->right.length();j++)
+					{
+						if(this->Nonterminate.find(p->right[j]) == -1)
+						{
+							flag = 0;
+							break;
+						}
+					}
+					if(flag == 1)
+					{
+						for(int k=0;k<p->right.length();k++)
+						{
+							if(Wi.find(p->right[k]) == -1)
+								Wi = Wi + p->right[k];
+						}
+						
+					}
+					*/
+					if(p->right.length() ==1 && this->Nonterminate.find(p->right) != -1)
+					{
+						if(Wi.find(p->right) == -1)
+						{
+							isContinue = true;
+							Wi = Wi + p->right;
+						}
+					}
+				}
+				p = p->next;
+			}
 		}
 		//构造Pi
 		p = this->head;
@@ -458,7 +565,7 @@ void Grammar::algorithm26()
 			{
 				right = p->right;
 				
-				if(!(right.length()==1 && this->Nonterminate.find(right) != -1))
+				if(!(right.length()==1 &&this->Nonterminate.find(right) != -1))
 				{
 					Generate *pNextG = new Generate;
 					pNextG->left = left;

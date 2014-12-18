@@ -45,6 +45,7 @@ public:
 	void SetStart(char);
 	void SetGenerate(Generate* h);
 	void Output();
+    void removeSameGenerate();
 
 	void deleteUselessGenerate();
 	void removeSingleGenerate();

@@ -10,6 +10,7 @@ int main(int argc, char ** argv)
 	string start = "";
 	Generate *pHead = new Generate;
 	Generate *p = pHead;
+	/*
 	cout<<"请输入非终结符(符号之间不需要添加间隔符):"<<endl;
 	cin>>nonterminate;
 	cout<<"请输入终结符(符号之间不需要添加间隔符):"<<endl;
@@ -18,6 +19,11 @@ int main(int argc, char ** argv)
 	cin>>start;
 	Grammar grammar(terminate,nonterminate,*start.c_str());
 	cout<<"请输入产生式(每个产生式一行,左端和右端空格隔开,结束则输入0):"<<endl;
+	*/
+	nonterminate = "SABCD";
+	terminate = "abc";
+	start = "S";
+	Grammar grammar(terminate,nonterminate,*start.c_str());
 	string left,right,r_tmp;
 
 	while(1)
@@ -37,6 +43,10 @@ int main(int argc, char ** argv)
 			if(t == '|')
 			{
 				r_tmp = right.substr(index,i-index);
+				if(r_tmp.length()==0)
+				{
+					r_tmp = "&";
+				}
 				index = i+1;
 				Generate *pNextG = new Generate;
 				pNextG->left = left[0];
@@ -46,6 +56,10 @@ int main(int argc, char ** argv)
 			}
 		}
 		r_tmp = right.substr(index,i-index);
+		if(r_tmp.length()==0)
+		{
+			r_tmp = "&";
+		}
 		index = i+1;
 		Generate *pNextG = new Generate;
 		pNextG->left = left[0];
@@ -53,19 +67,21 @@ int main(int argc, char ** argv)
 		p->next = pNextG;
 		p = pNextG;
 	}
+	grammar.SetGenerate(pHead);
 	Grammar grammar1 = grammar;
 	cout<<"消除无用产生式:"<<endl;
-	grammar1.SetGenerate(pHead);
+	
 	grammar1.deleteUselessGenerate();
-	grammar.Output();
+    grammar1.removeSingleGenerate();
+	grammar1.Output();
 	cout<<"消除无e产生式:"<<endl;
 	Grammar grammar2 = grammar;
 	grammar2.removeEGenerate();
 	grammar2.Output();
-	cout<<"消除单产生式:"<<endl;
-	Grammar grammar3 = grammar;
-	grammar3.removeSingleGenerate();
-	grammar3.Output();
+//	cout<<"消除单产生式:"<<endl;
+//	Grammar grammar3 = grammar;
+//	grammar3.removeSingleGenerate();
+//	grammar3.Output();
 	
 	return 0;
 }
